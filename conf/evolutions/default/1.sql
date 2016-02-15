@@ -1,0 +1,7 @@
+# --- !Ups
+
+create table "IMAGES" ("UUID" UUID NOT NULL PRIMARY KEY,  "BINARY" BINARY NOT NULL, "TIMESTAMP" TIMESTAMP NOT NULL);
+
+# --- !Downs
+
+drop table "IMAGES";
