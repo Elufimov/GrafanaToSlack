@@ -1,9 +1,9 @@
 package services
 
 import javax.inject.Singleton
-
-import net.gpedro.integrations.slack.{ SlackApi, SlackAttachment, SlackMessage }
 import utils.Config
+import play.api.Play.current
+import play.api.libs.ws.WS
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -12,16 +12,20 @@ import scala.concurrent.Future
  */
 @Singleton
 class SlackService {
-  def client = new SlackApi(Config.slackToken)
-  def sendMessage(to: String, imageUrl: String) = {
-    Future {
-      val msg = new SlackMessage(to, Config.slackBotName, "")
-      val attach = new SlackAttachment()
-        .setFallback(imageUrl)
-        .setImageUrl(imageUrl)
-      msg.addAttachments(attach)
-      client.call(msg)
-    }
+  def send(channel: String, imageUrl: String) = {
+    WS.url(Config.slackToken).post(
+      s"""
+        |{
+        | "username": "${Config.slackBotName}",
+        | "channel": "$channel",
+        | "attachments": [
+        |   {
+        |     "text": "$imageUrl",
+        |     "image_url": "$imageUrl"
+        |   }
+        | ]
+        |}
+      """.stripMargin
+    )
   }
-
 }

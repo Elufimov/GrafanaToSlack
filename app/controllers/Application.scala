@@ -12,6 +12,7 @@ import services.{ GrafanaService, SlackService }
 import utils.Config
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
 
 @Singleton
@@ -25,21 +26,25 @@ class Application @Inject() (
     grafana.downloadImage(panelId, slug, from, to, width, height).flatMap { downloadedFile ⇒
       imageDAO.insert(
         ImageModel(
-          uuid = UUID.randomUUID(),
+          uuid = None,
           array = downloadedFile,
           timestamp = new Timestamp(new java.util.Date().getTime())
         )
-      ).map { image ⇒
+      ).map { uuid ⇒
           request.body.asJson match {
             case Some(json) ⇒ Try((json \ "to").as[Seq[String]]) match {
               case Success(s) ⇒
-                s.foreach(i ⇒ slack.sendMessage(i, s"${Config.url}:${Config.port}/image/${image.uuid}"))
-                Ok(image.uuid.toString)
+                s.foreach { i ⇒
+                  slack.send(i, s"${Config.url}:${Config.port}/image/${uuid.toString}").map { response ⇒
+                    Logger.info(s"Slack push to: $i url: ${Config.url}:${Config.port}/image/${uuid.toString} status: ${response.body}")
+                  }
+                }
+                Ok(uuid.toString)
               case Failure(e) ⇒
                 Logger.error(e.toString)
                 BadRequest(e.toString)
             }
-            case None ⇒ Ok(image.uuid.toString)
+            case None ⇒ Ok(uuid.toString)
           }
         }
     }

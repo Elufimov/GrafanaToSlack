@@ -11,6 +11,6 @@ object Config {
   val grafanaToken = application().configuration().getString("esgs.grafanaToken")
   val slackToken = application().configuration().getString("esgs.slackToken")
   val url = application().configuration().getString("esgs.url")
-  val port = application().configuration().getString("http.port")
+  val port = application().configuration().getString("esgs.port")
   val slackBotName = application().configuration().getString("esgs.slackBotName")
 }
