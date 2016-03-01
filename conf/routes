@@ -3,8 +3,7 @@
 # ~~~~
 
 # Home page
-POST    /render                              controllers.Application.insert(panelId: Int, slug: String, from: String, to: String, width: Int, height: Int)
 GET     /image/:uuid                         controllers.Application.image(uuid: UUID)
-
+POST    /forward                            controllers.Application.forward()
 
     

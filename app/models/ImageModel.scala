@@ -6,4 +6,8 @@ import java.util.UUID
 /**
  * Created by elufimov on 11/02/16.
  */
-case class ImageModel(uuid: Option[UUID], array: Array[Byte], timestamp: Timestamp)
+case class ImageModel(
+  uuid: Option[UUID],
+  array: Array[Byte],
+  timestamp: Timestamp
+)

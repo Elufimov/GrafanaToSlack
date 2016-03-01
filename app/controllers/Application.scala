@@ -5,15 +5,13 @@ import java.util.UUID
 import javax.inject._
 
 import dao.ImageDAO
-import models.ImageModel
-import play.api.Logger
+import models._
 import play.api.mvc._
 import services.{ GrafanaService, SlackService }
 import utils.Config
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{ Failure, Success, Try }
 
 @Singleton
 class Application @Inject() (
@@ -21,31 +19,56 @@ class Application @Inject() (
     imageDAO: ImageDAO,
     slack: SlackService
 ) extends Controller {
-
-  def insert(panelId: Int, slug: String, from: String, to: String, width: Int, height: Int) = Action.async(parse.anyContent) { request ⇒
-    grafana.downloadImage(panelId, slug, from, to, width, height).flatMap { downloadedFile ⇒
-      imageDAO.insert(
-        ImageModel(
-          uuid = None,
-          array = downloadedFile,
-          timestamp = new Timestamp(new java.util.Date().getTime())
-        )
-      ).map { uuid ⇒
-          request.body.asJson match {
-            case Some(json) ⇒ Try((json \ "to").as[Seq[String]]) match {
-              case Success(s) ⇒
-                s.foreach { i ⇒
-                  slack.send(i, s"${Config.url}:${Config.port}/image/${uuid.toString}").map { response ⇒
-                    Logger.info(s"Slack push to: $i url: ${Config.url}:${Config.port}/image/${uuid.toString} status: ${response.body}")
-                  }
-                }
-                Ok(uuid.toString)
-              case Failure(e) ⇒
-                Logger.error(e.toString)
-                BadRequest(e.toString)
-            }
-            case None ⇒ Ok(uuid.toString)
+  def forward() = Action.async(parse.json[SlackMessageMultiple]) { request ⇒
+    request.body.attachments match {
+      case None ⇒
+        Future {
+          request.body.channels.foreach { channel ⇒
+            slack.sendMessage(
+              SlackMessageSingle(
+                username = request.body.username,
+                icon_emoji = request.body.icon_emoji,
+                text = request.body.text,
+                channel = channel,
+                attachments = None
+              )
+            )
           }
+          Ok("")
+        }
+      case Some(e) ⇒
+        val listOfFuture = e.map { attach ⇒
+          if (attach.image_url.exists(_.startsWith(Config.grafanaHost))) {
+            grafana.downloadImage(attach.image_url.get).flatMap { downloadedFile ⇒
+              imageDAO.insert(
+                ImageModel(
+                  uuid = None,
+                  array = downloadedFile,
+                  timestamp = new Timestamp(new java.util.Date().getTime())
+                )
+              )
+            }.map { uuid ⇒
+              attach.copy(image_url = Some(s"${Config.url}:${Config.port}/image/${uuid.toString}"))
+            }
+          } else {
+            Future {
+              attach
+            }
+          }
+        }
+        Future.sequence(listOfFuture).map { list ⇒
+          request.body.channels.foreach { channel ⇒
+            slack.sendMessage(
+              SlackMessageSingle(
+                username = request.body.username,
+                icon_emoji = request.body.icon_emoji,
+                text = request.body.text,
+                channel = channel,
+                attachments = Some(list)
+              )
+            )
+          }
+          Ok("")
         }
     }
   }

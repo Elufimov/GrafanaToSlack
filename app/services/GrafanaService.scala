@@ -14,9 +14,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class GrafanaService {
-  def downloadImage(panelId: Int, slug: String, from: String, to: String, width: Int, height: Int) = {
-    val url = s"/render/dashboard-solo/db/$slug/?panelId=$panelId&width=$width&height=$height&from=$from&to=$to"
-    WS.url(s"${Config.grafanaHost}$url")
+  def downloadImage(url: String) = {
+    WS.url(url)
       .withHeaders("Authorization" → s"Bearer ${Config.grafanaToken}")
       .get().map(_.bodyAsBytes)
   }
