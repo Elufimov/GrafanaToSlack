@@ -1,18 +1,18 @@
 package services
 
-import javax.inject.Singleton
+import javax.inject.{ Inject, Singleton }
 
 import models.SlackMessageSingle
-import play.api.Play.current
 import play.api.libs.json.Json
-import play.api.libs.ws.WS
+import play.api.libs.ws._
 import utils.Config
+
 /**
  * Created by elufimov on 08/02/16.
  */
 @Singleton
-class SlackService {
+class SlackService @Inject() (ws: WSClient) {
   def sendMessage(message: SlackMessageSingle) = {
-    WS.url(Config.slackToken).post(Json.toJson(message))
+    ws.url(Config.slackToken).post(Json.toJson(message))
   }
 }

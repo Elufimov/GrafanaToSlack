@@ -2,8 +2,7 @@ package services
 
 import javax.inject._
 
-import play.api.Play.current
-import play.api.libs.ws.WS
+import play.api.libs.ws._
 import utils.Config
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -13,10 +12,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 
 @Singleton
-class GrafanaService {
+class GrafanaService @Inject() (ws: WSClient) {
   def downloadImage(url: String) = {
-    WS.url(url)
+    ws.url(url)
       .withHeaders("Authorization" → s"Bearer ${Config.grafanaToken}")
-      .get().map(_.bodyAsBytes)
+      .get().map(_.bodyAsBytes.toArray)
   }
 }

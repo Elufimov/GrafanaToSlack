@@ -29,8 +29,8 @@ maintainer in Docker := "Michael Elufimov <elufimov@gmail.com>"
 libraryDependencies ++= Seq(
   ws,
   "com.github.pathikrit"  %% "better-files"  % "2.14.0",
-  "com.typesafe.play" %% "play-slick" % "1.1.1",
-  "com.typesafe.play" %% "play-slick-evolutions" % "1.1.1",
+  "com.typesafe.play" %% "play-slick" % "2.0.0",
+  "com.typesafe.play" %% "play-slick-evolutions" % "2.0.0",
   "org.postgresql" % "postgresql" % "9.4.1208"
 )
 
